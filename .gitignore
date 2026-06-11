@@ -35,3 +35,4 @@ test.db
 coverage/
 .nyc_output/
 htmlcov/
+Note.txt
