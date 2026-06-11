@@ -345,7 +345,7 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                   onClick={() => { const next = page + 1; setPage(next); load(next) }}
                   isLoading={isLoading}
                 >
-                  Load more ({total - entries.length} remaining)
+                  Load more ({total - noteEntries.length} remaining)
                 </Button>
               </div>
             )}

@@ -37,8 +37,8 @@ export function TodoChecklist({ entry, focusArea, entryDate, focusAreaId, onEntr
       const updated = await entriesApi.updateTodos(currentEntry.id, newCompletions)
       onEntryUpdate?.(updated)
     } catch {
-      // Revert on error
-      setCompletions(completions)
+      // Revert on error using functional update to avoid stale closure
+      setCompletions(prev => ({ ...prev, [item]: !newCompletions[item] }))
     } finally {
       setSavingKey(null)
     }

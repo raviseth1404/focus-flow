@@ -33,8 +33,13 @@ export function DailyLogDrawer({ onEntryUpdated }: DailyLogDrawerProps) {
       ])
       setFocusAreas(areas)
       setEntries(dayEntries)
-      if (!activeFocusAreaId && areas.length > 0) {
-        setActiveFocusAreaId(areas[0].id)
+      // Always reset to first area on open — ensures deleted/reordered areas don't leave a blank tab
+      if (areas.length > 0) {
+        setActiveFocusAreaId(prev => {
+          // Keep existing selection only if it still exists in the new list
+          const stillExists = areas.some(a => a.id === prev)
+          return stillExists ? prev : areas[0].id
+        })
       }
     } catch {}
     setIsLoading(false)

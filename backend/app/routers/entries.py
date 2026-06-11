@@ -4,19 +4,21 @@ from sqlalchemy import select, func, and_, extract
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from uuid import UUID
 from datetime import date, timedelta
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Dict
+from pydantic import BaseModel
 from app.database import get_db
 from app.auth.dependencies import get_user_id
 from app.models.db_models import DailyEntry, FocusArea, DailyMood
 from app.schemas.entry import EntryUpsert, EntryUpdate, EntryResponse, CalendarHeatmapItem
-from pydantic import BaseModel
+from app.schemas.common import PaginatedResponse
+
 
 class TodoCompletionUpdate(BaseModel):
-    todo_completions: dict
+    todo_completions: Dict[str, bool]
+
 
 class PinUpdate(BaseModel):
     is_pinned: bool
-from app.schemas.common import PaginatedResponse
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
@@ -179,10 +181,6 @@ async def upsert_entry(
     if not fa_result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Focus area not found")
 
-    activities_text = extract_plain_text(payload.activities)
-    notes_text = extract_plain_text(payload.notes)
-    word_count = len((activities_text + " " + notes_text).split())
-
     # Check existing
     existing = await db.execute(
         select(DailyEntry).where(
@@ -196,14 +194,19 @@ async def upsert_entry(
     if entry:
         if payload.activities is not None:
             entry.activities = payload.activities
-            entry.activities_plain_text = activities_text
+            entry.activities_plain_text = extract_plain_text(payload.activities)
         if payload.notes is not None:
             entry.notes = payload.notes
-            entry.notes_plain_text = notes_text
+            entry.notes_plain_text = extract_plain_text(payload.notes)
         if payload.mood is not None:
             entry.mood = payload.mood
-        entry.word_count = word_count
+        # Recalculate word count from the final saved values (not raw payload)
+        # so partial saves (notes-only or activities-only) don't reset the other field's count
+        texts = (entry.activities_plain_text or "") + " " + (entry.notes_plain_text or "")
+        entry.word_count = len(texts.split())
     else:
+        activities_text = extract_plain_text(payload.activities)
+        notes_text = extract_plain_text(payload.notes)
         entry = DailyEntry(
             user_id=UUID(user_id),
             focus_area_id=payload.focus_area_id,
@@ -213,7 +216,7 @@ async def upsert_entry(
             notes=payload.notes,
             notes_plain_text=notes_text,
             mood=payload.mood,
-            word_count=word_count,
+            word_count=len((activities_text + " " + notes_text).split()),
         )
         db.add(entry)
 

@@ -50,7 +50,9 @@ export function ActivitiesTab({ focusArea, entry, selectedDate, onEntryUpdate }:
 
   const handleManualSave = () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    if (pendingJsonRef.current) doSave(pendingJsonRef.current)
+    // Use pending changes if available, otherwise fall back to the current entry content
+    const json = pendingJsonRef.current ?? (entry?.activities as Record<string, unknown> ?? null)
+    if (json) doSave(json)
   }
 
   return (
