@@ -90,7 +90,12 @@ async def summarize_entry(
     )
 
     raw = message.content[0].text.strip()
-    return json.loads(raw)
+    # Strip markdown code fences if present
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw.strip())
 
 
 async def generate_weekly_digest(
@@ -113,4 +118,8 @@ async def generate_weekly_digest(
     )
 
     raw = message.content[0].text.strip()
-    return json.loads(raw)
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw.strip())
