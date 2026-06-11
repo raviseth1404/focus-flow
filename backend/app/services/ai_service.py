@@ -3,7 +3,7 @@ import anthropic
 from app.config import settings
 
 client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-3-5-sonnet-20241022"
 
 SUMMARIZE_SYSTEM_PROMPT = """
 You are a thoughtful personal productivity assistant helping a professional reflect on their day.
