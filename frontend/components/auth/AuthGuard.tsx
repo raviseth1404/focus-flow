@@ -23,6 +23,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           const profile = await profileApi.get()
           setProfile(profile)
         } catch {}
+      } else {
+        router.replace('/login')
       }
       setLoading(false)
     }
