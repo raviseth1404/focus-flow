@@ -16,6 +16,7 @@ import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff, Sparkles, Trash
 import toast from 'react-hot-toast'
 import { aiApi } from '@/lib/api/ai'
 import type { FocusAreaSummaryResponse } from '@/lib/api/ai'
+import { AttachmentPanel } from '@/components/daily-log/AttachmentPanel'
 import type { FocusArea, FocusAreaWithStats, DailyEntry } from '@/types'
 
 const LIMIT = 20
@@ -48,6 +49,10 @@ function NoteModal({
     existingEntry?.notes ?? initialMatchingEntry?.notes ?? null
   )
   const [isSaving, setIsSaving] = useState(false)
+  // Track the saved entry so AttachmentPanel can attach files to it
+  const [savedEntry, setSavedEntry] = useState<DailyEntry | null>(
+    existingEntry ?? initialMatchingEntry ?? null
+  )
 
   // Entry for the currently-selected date (only used in "new" mode)
   const entryForDate = !isEditMode ? allEntries.find(e => e.entry_date === date && e.notes) ?? null : null
@@ -66,6 +71,7 @@ function NoteModal({
     setIsSaving(true)
     try {
       const entry = await entriesApi.upsert({ focus_area_id: focusAreaId, entry_date: date, notes })
+      setSavedEntry(entry)
       toast.success('Note saved!')
       onSuccess(entry)
       onClose()
@@ -73,6 +79,16 @@ function NoteModal({
       toast.error('Failed to save note')
     }
     setIsSaving(false)
+  }
+
+  const handleEntryCreatedForAttachment = async (): Promise<string | null> => {
+    try {
+      const entry = await entriesApi.upsert({ focus_area_id: focusAreaId, entry_date: date })
+      setSavedEntry(entry)
+      return entry.id
+    } catch {
+      return null
+    }
   }
 
   const modalTitle = isEditMode ? 'Edit Note' : isResuming ? 'Edit Existing Note' : 'New Note'
@@ -109,6 +125,13 @@ function NoteModal({
             />
           </div>
         </div>
+        <AttachmentPanel
+          entryId={savedEntry?.id ?? null}
+          section="notes"
+          focusAreaId={focusAreaId}
+          selectedDate={date}
+          onEntryCreated={handleEntryCreatedForAttachment}
+        />
         <div className="flex gap-3 pt-1">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button className="flex-1" onClick={handleSave} isLoading={isSaving}>

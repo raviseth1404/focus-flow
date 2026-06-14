@@ -18,7 +18,7 @@ ALLOWED_MIME_TYPES = {
     "video/mp4", "video/webm",
 }
 
-MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 class PresignRequest(BaseModel):
@@ -41,7 +41,7 @@ class PresignRequest(BaseModel):
         if v <= 0:
             raise ValueError("file_size_bytes must be positive.")
         if v > MAX_FILE_SIZE_BYTES:
-            raise ValueError(f"File exceeds the 50 MB size limit.")
+            raise ValueError(f"File exceeds the 10 MB size limit.")
         return v
 
     @field_validator("file_name")

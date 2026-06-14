@@ -63,6 +63,13 @@ export function AttachmentPanel({ entryId, section, focusAreaId, selectedDate, o
         return
       }
 
+      // Client-side size check
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File exceeds the 10 MB size limit')
+        setUploading(false)
+        return
+      }
+
       // 1. Presign
       const { upload_url, attachment_id } = await attachmentsApi.presign({
         entry_id: eid,
@@ -161,7 +168,7 @@ export function AttachmentPanel({ entryId, section, focusAreaId, selectedDate, o
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-bg-elevated)] border border-dashed border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload size={11} />
-            {uploading ? 'Uploading…' : 'Attach file'}
+            {uploading ? 'Uploading…' : 'Attach file (max 10 MB)'}
           </button>
           <input
             ref={fileInputRef}
