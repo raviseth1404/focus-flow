@@ -27,8 +27,19 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'FocusFlow — Your focused life, one day at a time.',
   description: 'Track your focus areas, log daily activities, and get AI-powered insights.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'FocusFlow',
+  },
   icons: {
     icon: '/favicon.ico',
+    apple: '/icons/apple-touch-icon.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'msapplication-TileColor': '#F4A636',
   },
 }
 

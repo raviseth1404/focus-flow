@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { profileApi } from '@/lib/api/profile'
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow'
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { setUser, setSession, setProfile, setLoading, isLoading } = useAuthStore()
+  const { setUser, setSession, setProfile, setLoading, isLoading, profile } = useAuthStore()
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -22,6 +24,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         try {
           const profile = await profileApi.get()
           setProfile(profile)
+          if (!profile.onboarding_done) setShowOnboarding(true)
         } catch {}
       } else {
         router.replace('/login')
@@ -60,6 +63,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     )
+  }
+
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />
   }
 
   return <>{children}</>

@@ -4,6 +4,13 @@ from uuid import UUID
 from datetime import datetime, date
 
 
+class StreakResponse(BaseModel):
+    current_streak: int
+    longest_streak: int
+    total_days: int
+    last_logged_date: Optional[date]
+
+
 class ProfileUpdate(BaseModel):
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
