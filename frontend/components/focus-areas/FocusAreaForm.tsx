@@ -51,6 +51,8 @@ export function FocusAreaForm({ isOpen, onClose, initialData, onSuccess }: Focus
   }
 
   const startEdit = (idx: number) => {
+    // Commit any in-progress edit before starting a new one
+    if (editingIdx !== null) commitEdit()
     setEditingIdx(idx)
     setEditingValue(todoItems[idx])
   }
