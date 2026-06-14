@@ -5,12 +5,14 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useFocusAreaStore } from '@/store/useFocusAreaStore'
 import { Drawer } from '@/components/ui/Drawer'
 import { FocusAreaTabs } from './FocusAreaTabs'
+import { MoodPicker } from './MoodPicker'
 import { SkeletonList } from '@/components/ui/SkeletonLoader'
 import { EmptyState, NoEntriesIllustration } from '@/components/ui/EmptyState'
 import { focusAreasApi } from '@/lib/api/focus-areas'
 import { entriesApi } from '@/lib/api/entries'
+import { moodsApi } from '@/lib/api/moods'
 import { format, parseISO } from 'date-fns'
-import type { DailyEntry } from '@/types'
+import type { DailyEntry, Mood } from '@/types'
 
 interface DailyLogDrawerProps {
   onEntryUpdated?: () => void
@@ -22,17 +24,22 @@ export function DailyLogDrawer({ onEntryUpdated }: DailyLogDrawerProps) {
   const [entries, setEntries] = useState<DailyEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeFocusAreaId, setActiveFocusAreaId] = useState<string | null>(null)
+  const [currentMood, setCurrentMood] = useState<Mood | null>(null)
 
   const loadData = useCallback(async () => {
     if (!selectedDate) return
     setIsLoading(true)
     try {
-      const [areas, dayEntries] = await Promise.all([
+      const month = selectedDate.slice(0, 7)
+      const [areas, dayEntries, monthMoods] = await Promise.all([
         focusAreasApi.list(),
         entriesApi.listByDate(selectedDate),
+        moodsApi.listByMonth(month),
       ])
       setFocusAreas(areas)
       setEntries(dayEntries)
+      const todayMood = monthMoods.find(m => m.entry_date === selectedDate)
+      setCurrentMood(todayMood?.mood ?? null)
       // Always reset to first area on open — ensures deleted/reordered areas don't leave a blank tab
       if (areas.length > 0) {
         setActiveFocusAreaId(prev => {
@@ -89,6 +96,11 @@ export function DailyLogDrawer({ onEntryUpdated }: DailyLogDrawerProps) {
         />
       ) : (
         <div className="flex flex-col h-full">
+          <MoodPicker
+            selectedDate={selectedDate!}
+            currentMood={currentMood}
+            onMoodSaved={setCurrentMood}
+          />
           <FocusAreaTabs
             focusAreas={focusAreas}
             entries={entries}

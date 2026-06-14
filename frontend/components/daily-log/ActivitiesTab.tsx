@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { RichTextEditor } from '@/components/editor/RichTextEditor'
+import { AttachmentPanel } from './AttachmentPanel'
 import { entriesApi } from '@/lib/api/entries'
 import toast from 'react-hot-toast'
 import type { FocusArea, DailyEntry } from '@/types'
@@ -84,6 +85,17 @@ export function ActivitiesTab({ focusArea, entry, selectedDate, onEntryUpdate }:
         content={entry?.activities ?? null}
         placeholder={`What did you do for ${focusArea.name} today?`}
         onChange={handleChange}
+      />
+      <AttachmentPanel
+        entryId={entry?.id ?? null}
+        section="activities"
+        focusAreaId={focusArea.id}
+        selectedDate={selectedDate}
+        onEntryCreated={async () => {
+          const created = await entriesApi.upsert({ focus_area_id: focusArea.id, entry_date: selectedDate })
+          onEntryUpdate(created)
+          return created.id
+        }}
       />
     </div>
   )

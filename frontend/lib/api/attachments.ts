@@ -7,6 +7,7 @@ export const attachmentsApi = {
     section: 'activities' | 'notes'
     file_name: string
     mime_type: string
+    file_size_bytes: number
   }) =>
     apiClient
       .post<{ upload_url: string; storage_path: string; attachment_id: string }>('/attachments/presign', data)

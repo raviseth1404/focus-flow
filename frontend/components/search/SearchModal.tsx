@@ -3,12 +3,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useUIStore } from '@/store/useUIStore'
 import { searchApi } from '@/lib/api/search'
+import { focusAreasApi } from '@/lib/api/focus-areas'
 import { useFocusAreaStore } from '@/store/useFocusAreaStore'
-import { Input } from '@/components/ui/Input'
 import { SearchResultItem } from './SearchResultItem'
 import { NoSearchResultsIllustration } from '@/components/ui/EmptyState'
 import { Search, X } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
 import type { SearchResult } from '@/types'
 
 export function SearchModal() {
@@ -18,6 +17,7 @@ export function SearchModal() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Cmd+K shortcut
   useEffect(() => {
@@ -35,18 +35,29 @@ export function SearchModal() {
     if (!q.trim()) {
       setResults([])
       setHasSearched(false)
+      setError(null)
       return
     }
     setIsLoading(true)
     setHasSearched(true)
+    setError(null)
     try {
+      // Ensure focus areas are loaded so we can enrich results
+      let areas = focusAreas
+      if (areas.length === 0) {
+        areas = await focusAreasApi.list()
+        useFocusAreaStore.getState().setFocusAreas(areas)
+      }
       const data = await searchApi.search({ q })
       const enriched = data.results.map((r) => ({
         ...r,
-        focus_area: focusAreas.find((fa) => fa.id === r.focus_area_id),
+        focus_area: areas.find((fa) => fa.id === r.focus_area_id),
       }))
       setResults(enriched)
-    } catch {}
+    } catch {
+      setError('Search failed. Please try again.')
+      setResults([])
+    }
     setIsLoading(false)
   }, [focusAreas])
 
@@ -60,6 +71,7 @@ export function SearchModal() {
       setQuery('')
       setResults([])
       setHasSearched(false)
+      setError(null)
     }
   }, [isSearchOpen])
 
@@ -97,14 +109,20 @@ export function SearchModal() {
             </div>
           )}
 
-          {!isLoading && hasSearched && results.length === 0 && (
+          {!isLoading && error && (
+            <div className="py-8 text-center text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {!isLoading && !error && hasSearched && results.length === 0 && (
             <div className="py-10 flex flex-col items-center gap-3 text-[var(--color-text-disabled)]">
               <NoSearchResultsIllustration />
               <p className="text-sm">No results for &ldquo;{query}&rdquo;</p>
             </div>
           )}
 
-          {!isLoading && results.map((result) => (
+          {!isLoading && !error && results.map((result) => (
             <SearchResultItem
               key={result.id}
               result={result}
