@@ -1,19 +1,25 @@
 import jwt
 import httpx
+from datetime import datetime, timezone, timedelta
+from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
 
 security = HTTPBearer()
 
-# Cache JWKS public keys (fetched once on startup)
+JWKS_TTL = timedelta(hours=1)
+
+# Cache JWKS public keys with a timestamp for TTL invalidation
 _jwks_cache: dict = {}
+_jwks_fetched_at: Optional[datetime] = None
 
 
 async def _get_jwks() -> dict:
-    """Fetch and cache Supabase JWKS public keys."""
-    global _jwks_cache
-    if _jwks_cache:
+    """Fetch and cache Supabase JWKS public keys. Refreshes every hour."""
+    global _jwks_cache, _jwks_fetched_at
+    now = datetime.now(timezone.utc)
+    if _jwks_cache and _jwks_fetched_at and (now - _jwks_fetched_at) < JWKS_TTL:
         return _jwks_cache
     jwks_url = f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json"
     async with httpx.AsyncClient() as client:
@@ -21,6 +27,7 @@ async def _get_jwks() -> dict:
         resp.raise_for_status()
         data = resp.json()
         _jwks_cache = {key["kid"]: key for key in data["keys"]}
+        _jwks_fetched_at = now
     return _jwks_cache
 
 
@@ -48,8 +55,10 @@ async def get_current_user(
             kid = header.get("kid")
             jwks = await _get_jwks()
             if kid not in jwks:
-                # Bust cache and retry once
+                # Bust cache and retry once (handles key rotation)
+                global _jwks_fetched_at
                 _jwks_cache.clear()
+                _jwks_fetched_at = None
                 jwks = await _get_jwks()
             if kid not in jwks:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown key ID")

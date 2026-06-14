@@ -37,6 +37,19 @@ async def create_signed_download_url(storage_path: str, expires_in: int = 3600) 
         return f"{settings.SUPABASE_URL}/storage/v1{data['signedURL']}"
 
 
+async def file_exists(storage_path: str) -> bool:
+    """Check if a file exists in Supabase Storage."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.head(
+            f"{SUPABASE_STORAGE_URL}/object/{BUCKET}/{storage_path}",
+            headers={
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
+                "apikey": settings.SUPABASE_SERVICE_ROLE_KEY,
+            },
+        )
+        return resp.status_code == 200
+
+
 async def delete_file(storage_path: str) -> None:
     """Delete a file from Supabase Storage."""
     async with httpx.AsyncClient() as client:

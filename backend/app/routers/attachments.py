@@ -48,6 +48,7 @@ async def presign_upload(
         section=payload.section,
         file_name=payload.file_name,
         mime_type=payload.mime_type,
+        file_size_bytes=payload.file_size_bytes,
         storage_path=storage_path,
     )
     db.add(attachment)
@@ -75,6 +76,14 @@ async def confirm_upload(
     attachment = result.scalar_one_or_none()
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
+
+    # Verify the file actually landed in storage before confirming
+    file_exists = await storage_service.file_exists(attachment.storage_path)
+    if not file_exists:
+        # Clean up the dangling DB record
+        await db.delete(attachment)
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Upload not found in storage. Please try uploading again.")
 
     signed_url = await storage_service.create_signed_download_url(attachment.storage_path)
     response = AttachmentResponse.model_validate(attachment)

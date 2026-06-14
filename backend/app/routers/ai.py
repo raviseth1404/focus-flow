@@ -1,36 +1,57 @@
 import json
-from datetime import date, timedelta
+import logging
+from datetime import date, timedelta, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from uuid import UUID
 from app.database import get_db
 from app.auth.dependencies import get_user_id
-from app.models.db_models import DailyEntry, FocusArea, WeeklyDigest
+from app.models.db_models import DailyEntry, FocusArea, WeeklyDigest, Profile
 from app.schemas.ai import SummarizeRequest, WeeklyDigestRequest, WeeklyDigestResponse, FocusAreaSummarizeRequest, FocusAreaSummaryResponse
 from app.schemas.entry import EntryResponse
 from app.services import ai_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-# Simple in-memory rate limit: user_id -> last_call_time (per-process, resets on restart)
-_rate_limit: dict[str, list] = {}
 RATE_LIMIT_PER_HOUR = 20
 
 
-def _check_rate_limit(user_id: str):
-    from datetime import datetime
-    now = datetime.utcnow()
-    calls = _rate_limit.get(user_id, [])
-    # Keep only calls in the last hour
-    calls = [c for c in calls if (now - c).seconds < 3600]
-    if len(calls) >= RATE_LIMIT_PER_HOUR:
+async def _check_rate_limit(user_id: str, db: AsyncSession) -> None:
+    """
+    DB-backed per-user rate limit: max 20 AI calls per rolling hour.
+    Survives process restarts and redeploys. Uses UTC timestamps.
+    """
+    now = datetime.now(timezone.utc)
+
+    result = await db.execute(select(Profile).where(Profile.id == UUID(user_id)))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    window_start = profile.ai_window_start
+    calls = profile.ai_calls_this_hour or 0
+
+    # Reset window if it's been more than an hour (use total_seconds — not .seconds)
+    if window_start is None or (now - window_start).total_seconds() >= 3600:
+        profile.ai_window_start = now
+        profile.ai_calls_this_hour = 1
+        await db.commit()
+        return
+
+    if calls >= RATE_LIMIT_PER_HOUR:
+        reset_in = int(3600 - (now - window_start).total_seconds())
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"code": "RATE_LIMIT_EXCEEDED", "message": "AI rate limit exceeded (20/hour)"},
+            detail={
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": f"AI rate limit exceeded ({RATE_LIMIT_PER_HOUR}/hour). Resets in {reset_in}s.",
+            },
         )
-    calls.append(now)
-    _rate_limit[user_id] = calls
+
+    profile.ai_calls_this_hour = calls + 1
+    await db.commit()
 
 
 @router.post("/summarize", response_model=EntryResponse)
@@ -39,7 +60,7 @@ async def summarize_entry(
     user_id: str = Depends(get_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    _check_rate_limit(user_id)
+    await _check_rate_limit(user_id, db)
 
     result = await db.execute(
         select(DailyEntry).where(
@@ -62,14 +83,14 @@ async def summarize_entry(
             notes_text=entry.notes_plain_text or "",
         )
     except Exception as e:
+        logger.error("AI summarize_entry failed: %s", e)
         raise HTTPException(
             status_code=500,
-            detail={"code": "AI_SERVICE_ERROR", "message": str(e)},
+            detail={"code": "AI_SERVICE_ERROR", "message": "AI service unavailable. Please try again."},
         )
 
-    from datetime import datetime
     entry.ai_summary = summary
-    entry.ai_summary_generated_at = datetime.utcnow()
+    entry.ai_summary_generated_at = datetime.now(timezone.utc)
     entry.ai_summary_model = ai_service.MODEL
     await db.commit()
     await db.refresh(entry)
@@ -82,7 +103,7 @@ async def summarize_focus_area(
     user_id: str = Depends(get_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    _check_rate_limit(user_id)
+    await _check_rate_limit(user_id, db)
 
     fa_result = await db.execute(
         select(FocusArea).where(FocusArea.id == payload.focus_area_id, FocusArea.user_id == UUID(user_id))
@@ -95,8 +116,8 @@ async def summarize_focus_area(
         select(DailyEntry).where(
             DailyEntry.focus_area_id == payload.focus_area_id,
             DailyEntry.user_id == UUID(user_id),
-            DailyEntry.notes != None,
-        ).order_by(DailyEntry.entry_date.desc())
+            DailyEntry.notes.isnot(None),
+        ).order_by(DailyEntry.entry_date.asc())
     )
     entries = entries_result.scalars().all()
 
@@ -107,7 +128,10 @@ async def summarize_focus_area(
         f"[{e.entry_date}]\n{e.notes_plain_text or ''}"
         for e in entries if e.notes_plain_text
     ])
-    date_range = f"{entries[-1].entry_date} → {entries[0].entry_date}"
+    if not notes_text.strip():
+        raise HTTPException(status_code=400, detail="No note content found for this focus area")
+
+    date_range = f"{entries[0].entry_date} → {entries[-1].entry_date}"
 
     try:
         summary = await ai_service.summarize_focus_area_notes(
@@ -116,7 +140,11 @@ async def summarize_focus_area(
             total_notes=len(entries),
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail={"code": "AI_SERVICE_ERROR", "message": str(e)})
+        logger.error("AI summarize_focus_area failed: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "AI_SERVICE_ERROR", "message": "AI service unavailable. Please try again."},
+        )
 
     return FocusAreaSummaryResponse(
         summary=summary,
@@ -131,7 +159,7 @@ async def weekly_digest(
     user_id: str = Depends(get_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    _check_rate_limit(user_id)
+    await _check_rate_limit(user_id, db)
 
     # Normalize to Monday
     week_start = payload.week_start - timedelta(days=payload.week_start.weekday())
@@ -188,9 +216,10 @@ async def weekly_digest(
             entries_data=entries_data,
         )
     except Exception as e:
+        logger.error("AI weekly_digest failed: %s", e)
         raise HTTPException(
             status_code=500,
-            detail={"code": "AI_SERVICE_ERROR", "message": str(e)},
+            detail={"code": "AI_SERVICE_ERROR", "message": "AI service unavailable. Please try again."},
         )
 
     digest = WeeklyDigest(
