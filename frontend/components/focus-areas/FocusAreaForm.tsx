@@ -40,8 +40,17 @@ export function FocusAreaForm({ isOpen, onClose, initialData, onSuccess }: Focus
 
   const addTodo = () => {
     const t = newTodo.trim()
-    if (!t || todoItems.includes(t)) return
-    setTodoItems([...todoItems, t])
+    if (!t) return
+    // Commit any in-progress inline edit before adding
+    if (editingIdx !== null) commitEdit()
+    // Warn on duplicates instead of silently doing nothing
+    if (todoItems.includes(t)) {
+      toast(`"${t}" is already in the list`, { icon: '⚠️' })
+      return
+    }
+    // Functional update so we always append to the latest state
+    // (handles the case where commitEdit also queued a setTodoItems)
+    setTodoItems(prev => [...prev, t])
     setNewTodo('')
   }
 
