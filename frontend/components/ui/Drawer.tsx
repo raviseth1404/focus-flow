@@ -43,7 +43,7 @@ export function Drawer({ isOpen, onClose, title, children, width = 'max-w-2xl' }
           'border-l border-[var(--color-border)]',
           'transition-transform duration-300 ease-in-out',
           'flex flex-col',
-          width,
+          `sm:${width}`,
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
         style={{ boxShadow: '-8px 0 48px rgba(0,0,0,0.4)' }}

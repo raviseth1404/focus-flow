@@ -60,7 +60,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <TopNav title="Settings" />
-      <div className="flex-1 p-6 max-w-xl mx-auto w-full space-y-8">
+      <div className="flex-1 p-4 md:p-6 max-w-xl mx-auto w-full space-y-8">
 
         {/* Profile */}
         <section className="card p-6">

@@ -13,8 +13,6 @@ const MOOD_COLORS: Record<string, string> = {
   rough: '#EF4444',
 }
 
-const CELL_SIZE = 48
-
 interface CalendarCellProps {
   date: Date
   heatmapData?: CalendarHeatmapItem
@@ -23,7 +21,7 @@ interface CalendarCellProps {
 }
 
 export function CalendarCell({ date, heatmapData, isCurrentMonth, onClick }: CalendarCellProps) {
-  const dateStr = date.toISOString().split('T')[0]
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   const isTodayDate = isToday(date)
   const completionPct = heatmapData?.completion_pct ?? 0
   const mood = heatmapData?.mood
@@ -33,25 +31,25 @@ export function CalendarCell({ date, heatmapData, isCurrentMonth, onClick }: Cal
     <button
       onClick={onClick}
       className={cn(
-        'relative flex items-center justify-center rounded-lg transition-all duration-150',
+        'relative flex items-center justify-center rounded-lg transition-all duration-150 w-full aspect-square',
         'hover:bg-[var(--color-bg-subtle)] focus:outline-none',
         !isCurrentMonth && 'opacity-30',
         isTodayDate && 'animate-[pulse-ring_2s_ease_infinite]'
       )}
       style={{
-        width: CELL_SIZE,
-        height: CELL_SIZE,
         boxShadow: isTodayDate ? '0 0 0 2px rgba(244,166,54,0.6)' : undefined,
       }}
       title={dateStr}
     >
-      {/* Completion arc */}
-      <CompletionArc percentage={completionPct} size={CELL_SIZE} />
+      {/* Completion arc — fills the cell */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <CompletionArcResponsive percentage={completionPct} />
+      </div>
 
       {/* Date number */}
       <span
         className={cn(
-          'relative z-10 text-sm font-medium',
+          'relative z-10 text-xs sm:text-sm font-medium',
           isTodayDate
             ? 'text-[var(--color-accent)]'
             : hasEntries
@@ -65,10 +63,31 @@ export function CalendarCell({ date, heatmapData, isCurrentMonth, onClick }: Cal
       {/* Mood dot */}
       {mood && (
         <div
-          className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
           style={{ backgroundColor: MOOD_COLORS[mood] }}
         />
       )}
     </button>
+  )
+}
+
+// SVG arc that fills 100% of its container
+function CompletionArcResponsive({ percentage }: { percentage: number }) {
+  if (percentage <= 0) return null
+  const radius = 46
+  const circumference = 2 * Math.PI * radius
+  const strokeDash = (percentage / 100) * circumference
+  const color = percentage >= 100 ? '#FFFFFF' : percentage >= 40 ? '#F4A636' : '#0FADA0'
+
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx="50" cy="50" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
+      <circle
+        cx="50" cy="50" r={radius} fill="none"
+        stroke={color} strokeWidth="5"
+        strokeDasharray={`${strokeDash} ${circumference}`}
+        strokeLinecap="round"
+      />
+    </svg>
   )
 }

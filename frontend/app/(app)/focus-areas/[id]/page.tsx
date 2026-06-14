@@ -198,7 +198,7 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
   return (
     <div className="flex flex-col min-h-screen">
       <TopNav />
-      <div className="flex-1 p-6 max-w-content mx-auto w-full">
+      <div className="flex-1 p-4 md:p-6 max-w-content mx-auto w-full">
 
         {/* Back */}
         <Link

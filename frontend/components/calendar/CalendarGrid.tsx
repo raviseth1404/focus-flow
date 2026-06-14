@@ -66,7 +66,7 @@ export function CalendarGrid() {
       </div>
 
       {/* Cells */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {isLoading
           ? Array.from({ length: 35 }).map((_, i) => (
               <div key={i} className="flex items-center justify-center">

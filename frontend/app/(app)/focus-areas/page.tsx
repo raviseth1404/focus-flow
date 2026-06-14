@@ -72,7 +72,7 @@ export default function FocusAreasPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <TopNav title="Focus Areas" />
-      <div className="flex-1 p-6 max-w-content mx-auto w-full">
+      <div className="flex-1 p-4 md:p-6 max-w-content mx-auto w-full">
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-[var(--color-text-secondary)]">
             {focusAreas.length} area{focusAreas.length !== 1 ? 's' : ''}
