@@ -107,7 +107,7 @@ export default function FocusAreasPage() {
       </div>
 
       <FocusAreaForm
-        key={editingFa?.id ?? 'new'}
+        key={isFormOpen ? (editingFa?.id ?? 'new') : 'closed'}
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         initialData={editingFa}
