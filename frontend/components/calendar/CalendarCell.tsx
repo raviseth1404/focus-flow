@@ -5,12 +5,12 @@ import { CompletionArc } from './CompletionArc'
 import { isToday, parseISO } from '@/lib/utils/dates'
 import type { CalendarHeatmapItem } from '@/types'
 
-const MOOD_COLORS: Record<string, string> = {
-  great: '#22C55E',
-  good: '#0FADA0',
-  okay: '#F4A636',
-  low: '#F59E0B',
-  rough: '#EF4444',
+const MOOD_EMOJI: Record<string, string> = {
+  great: '😄',
+  good: '🙂',
+  okay: '😐',
+  low: '😔',
+  rough: '😞',
 }
 
 interface CalendarCellProps {
@@ -60,12 +60,11 @@ export function CalendarCell({ date, heatmapData, isCurrentMonth, onClick }: Cal
         {date.getDate()}
       </span>
 
-      {/* Mood dot */}
+      {/* Mood emoji */}
       {mood && (
-        <div
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-          style={{ backgroundColor: MOOD_COLORS[mood] }}
-        />
+        <span className="absolute bottom-0.5 right-0.5 text-[10px] leading-none sm:text-xs">
+          {MOOD_EMOJI[mood]}
+        </span>
       )}
     </button>
   )

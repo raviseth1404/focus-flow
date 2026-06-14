@@ -99,7 +99,7 @@ export function DailyLogDrawer({ onEntryUpdated }: DailyLogDrawerProps) {
           <MoodPicker
             selectedDate={selectedDate!}
             currentMood={currentMood}
-            onMoodSaved={setCurrentMood}
+            onMoodSaved={(mood) => { setCurrentMood(mood); onEntryUpdated?.() }}
           />
           <FocusAreaTabs
             focusAreas={focusAreas}
