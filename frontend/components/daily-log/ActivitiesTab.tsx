@@ -7,6 +7,7 @@ import { entriesApi } from '@/lib/api/entries'
 import toast from 'react-hot-toast'
 import type { FocusArea, DailyEntry } from '@/types'
 import { Save, Check } from 'lucide-react'
+import { ShareButton } from '@/components/ui/ShareButton'
 
 interface ActivitiesTabProps {
   focusArea: FocusArea
@@ -65,6 +66,11 @@ export function ActivitiesTab({ focusArea, entry, selectedDate, onEntryUpdate }:
         </h3>
         {/* Save status / button */}
         <div className="ml-auto flex items-center gap-2">
+          <ShareButton
+            title={`${focusArea.name} — Activities (${selectedDate})`}
+            text={entry?.activities_plain_text || ''}
+            size="xs"
+          />
           {saveState === 'saved' ? (
             <span className="flex items-center gap-1 text-xs text-[var(--color-accent)]">
               <Check size={12} /> Saved

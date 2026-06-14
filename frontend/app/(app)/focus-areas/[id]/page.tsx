@@ -13,6 +13,7 @@ import { entriesApi } from '@/lib/api/entries'
 import { FocusAreaForm } from '@/components/focus-areas/FocusAreaForm'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff, Sparkles, Trash2 } from 'lucide-react'
+import { ShareButton } from '@/components/ui/ShareButton'
 import toast from 'react-hot-toast'
 import { aiApi } from '@/lib/api/ai'
 import type { FocusAreaSummaryResponse } from '@/lib/api/ai'
@@ -134,6 +135,11 @@ function NoteModal({
         />
         <div className="flex gap-3 pt-1">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+          <ShareButton
+            title={`Note — ${date}`}
+            text={savedEntry?.notes_plain_text || ''}
+            className="px-3"
+          />
           <Button className="flex-1" onClick={handleSave} isLoading={isSaving}>
             <Save size={14} /> Save Note
           </Button>
@@ -430,6 +436,12 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                             >
                               <Pencil size={13} />
                             </button>
+                            <ShareButton
+                              title={`Note — ${focusArea?.name} (${format(parseISO(entry.entry_date), 'MMM d, yyyy')})`}
+                              text={entry.notes_plain_text || ''}
+                              size="xs"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-bg-subtle)]"
+                            />
                             <button
                               onClick={() => deleteNote(entry)}
                               disabled={deletingNoteId === entry.id}
