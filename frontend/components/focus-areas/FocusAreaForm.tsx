@@ -96,7 +96,7 @@ export function FocusAreaForm({ isOpen, onClose, initialData, onSuccess }: Focus
       title={initialData ? 'Edit Focus Area' : 'New Focus Area'}
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <Input
             label="Name"
             placeholder="e.g. Deep Work, Health & Fitness"

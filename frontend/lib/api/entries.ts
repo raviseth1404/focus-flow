@@ -36,4 +36,7 @@ export const entriesApi = {
     apiClient
       .get<CalendarHeatmapItem[]>('/entries/calendar-heatmap', { params: { year, month } })
       .then(r => r.data),
+
+  deleteNotes: (id: string) =>
+    apiClient.delete(`/entries/${id}/notes`),
 }

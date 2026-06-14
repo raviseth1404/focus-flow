@@ -12,8 +12,10 @@ import { focusAreasApi } from '@/lib/api/focus-areas'
 import { entriesApi } from '@/lib/api/entries'
 import { FocusAreaForm } from '@/components/focus-areas/FocusAreaForm'
 import { format, parseISO } from 'date-fns'
-import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff } from 'lucide-react'
+import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff, Sparkles, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { aiApi } from '@/lib/api/ai'
+import type { FocusAreaSummaryResponse } from '@/lib/api/ai'
 import type { FocusArea, FocusAreaWithStats, DailyEntry } from '@/types'
 
 const LIMIT = 20
@@ -130,6 +132,10 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
   const [editingEntry, setEditingEntry] = useState<DailyEntry | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [togglingPinId, setTogglingPinId] = useState<string | null>(null)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
+  const [aiSummary, setAiSummary] = useState<FocusAreaSummaryResponse | null>(null)
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [showAiSummary, setShowAiSummary] = useState(false)
 
   const load = useCallback(async (pageNum: number) => {
     setIsLoading(true)
@@ -172,6 +178,33 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
     })
     // Refresh focus area stats
     focusAreasApi.get(id).then(setFocusArea).catch(() => {})
+  }
+
+  const deleteNote = async (entry: DailyEntry) => {
+    if (!confirm('Delete this note? This cannot be undone.')) return
+    setDeletingNoteId(entry.id)
+    try {
+      await entriesApi.deleteNotes(entry.id)
+      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, notes: null, notes_plain_text: null } : e))
+      toast.success('Note deleted')
+      focusAreasApi.get(id).then(setFocusArea).catch(() => {})
+    } catch {
+      toast.error('Failed to delete note')
+    }
+    setDeletingNoteId(null)
+  }
+
+  const handleAiSummarize = async () => {
+    setIsAiLoading(true)
+    setShowAiSummary(true)
+    try {
+      const result = await aiApi.summarizeFocusArea(id)
+      setAiSummary(result)
+    } catch {
+      toast.error('Failed to generate AI summary. Try again.')
+      setShowAiSummary(false)
+    }
+    setIsAiLoading(false)
   }
 
   const togglePin = async (entry: DailyEntry) => {
@@ -231,14 +264,60 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="secondary" onClick={() => setIsEditOpen(true)} size="sm">
                 <Pencil size={14} /> Edit
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleAiSummarize}
+                size="sm"
+                isLoading={isAiLoading}
+                disabled={sortedEntries.length === 0}
+                title={sortedEntries.length === 0 ? 'Add some notes first' : 'Summarize all notes with AI'}
+              >
+                <Sparkles size={14} /> AI Summary
               </Button>
               <Button onClick={openNewNote} size="sm">
                 <Plus size={14} /> New Note
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* AI Summary Panel */}
+        {showAiSummary && (
+          <div className="mb-8 card p-6 border border-[var(--color-accent-muted)]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-[var(--color-accent)]" />
+                <h3 className="font-heading font-semibold text-[var(--color-text-primary)]">AI Summary</h3>
+                {aiSummary && (
+                  <span className="text-xs text-[var(--color-text-disabled)]">
+                    {aiSummary.total_notes} notes · {aiSummary.date_range}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => { setShowAiSummary(false); setAiSummary(null) }}
+                className="text-xs text-[var(--color-text-disabled)] hover:text-[var(--color-text-secondary)] transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+            {isAiLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded animate-pulse w-full" />
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded animate-pulse w-5/6" />
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded animate-pulse w-4/6" />
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded animate-pulse w-5/6" />
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded animate-pulse w-3/4" />
+              </div>
+            ) : aiSummary ? (
+              <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-line">
+                {aiSummary.summary}
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -327,6 +406,14 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                               className="p-1.5 rounded-md text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)] transition-colors"
                             >
                               <Pencil size={13} />
+                            </button>
+                            <button
+                              onClick={() => deleteNote(entry)}
+                              disabled={deletingNoteId === entry.id}
+                              title="Delete note"
+                              className="p-1.5 rounded-md text-[var(--color-text-disabled)] hover:text-red-400 hover:bg-[var(--color-bg-subtle)] transition-colors disabled:opacity-40"
+                            >
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </div>

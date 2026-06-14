@@ -98,6 +98,32 @@ async def summarize_entry(
     return json.loads(raw.strip())
 
 
+async def summarize_focus_area_notes(
+    focus_area_name: str,
+    notes_text: str,
+    total_notes: int,
+) -> str:
+    prompt = f"""You are summarizing all journal notes for a focus area called "{focus_area_name}".
+There are {total_notes} notes in total. Here they are chronologically:
+
+{notes_text}
+
+Write a clear, insightful summary (3-5 paragraphs) that:
+- Captures the overall journey and progress
+- Highlights key themes, learnings, and patterns
+- Notes important milestones or breakthroughs
+- Suggests what to focus on going forward
+
+Write in second person ("You have...", "Your notes show..."). Be specific and reference actual content from the notes."""
+
+    message = await client.messages.create(
+        model=MODEL,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return message.content[0].text.strip()
+
+
 async def generate_weekly_digest(
     week_start: str,
     week_end: str,

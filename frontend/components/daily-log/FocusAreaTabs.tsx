@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils/cn'
 import { ActivitiesTab } from './ActivitiesTab'
 import { NotesTab } from './NotesTab'
-import { AISummaryTab } from './AISummaryTab'
 import { TodoChecklist } from './TodoChecklist'
 import type { FocusArea, DailyEntry } from '@/types'
 
-type TabId = 'activities' | 'notes' | 'ai_summary'
+type TabId = 'activities' | 'notes'
 
 interface FocusAreaTabsProps {
   focusAreas: FocusArea[]
@@ -67,7 +66,7 @@ export function FocusAreaTabs({
         <>
           {/* Tab bar */}
           <div className="flex gap-1 px-6 pt-3 pb-0">
-            {(['activities', 'notes', 'ai_summary'] as TabId[]).map((tab) => (
+            {(['activities', 'notes'] as TabId[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -78,7 +77,7 @@ export function FocusAreaTabs({
                     : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'
                 )}
               >
-                {tab === 'activities' ? 'Activities' : tab === 'notes' ? 'Notes' : '✨ AI Summary'}
+                {tab === 'activities' ? 'Activities' : 'Notes'}
               </button>
             ))}
           </div>
@@ -107,12 +106,6 @@ export function FocusAreaTabs({
                 focusArea={activeFocusArea}
                 entry={activeEntry}
                 selectedDate={selectedDate}
-                onEntryUpdate={onEntryUpdate}
-              />
-            )}
-            {activeTab === 'ai_summary' && (
-              <AISummaryTab
-                entry={activeEntry}
                 onEntryUpdate={onEntryUpdate}
               />
             )}

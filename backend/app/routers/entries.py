@@ -292,3 +292,23 @@ async def toggle_pin(
     await db.commit()
     await db.refresh(entry)
     return entry
+
+
+@router.delete("/{entry_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_entry_notes(
+    entry_id: UUID,
+    user_id: str = Depends(get_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Clear the notes from an entry (keeps activities/todos intact)."""
+    result = await db.execute(
+        select(DailyEntry).where(DailyEntry.id == entry_id, DailyEntry.user_id == UUID(user_id))
+    )
+    entry = result.scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    entry.notes = None
+    entry.notes_plain_text = None
+    texts = (entry.activities_plain_text or "") + " " + (entry.notes_plain_text or "")
+    entry.word_count = len(texts.split()) if texts.strip() else 0
+    await db.commit()

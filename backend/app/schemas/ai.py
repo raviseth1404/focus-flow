@@ -8,6 +8,16 @@ class SummarizeRequest(BaseModel):
     entry_id: UUID
 
 
+class FocusAreaSummarizeRequest(BaseModel):
+    focus_area_id: UUID
+
+
+class FocusAreaSummaryResponse(BaseModel):
+    summary: str
+    total_notes: int
+    date_range: str
+
+
 class WeeklyDigestRequest(BaseModel):
     week_start: date
 

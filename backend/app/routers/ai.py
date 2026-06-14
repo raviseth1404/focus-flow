@@ -7,7 +7,7 @@ from uuid import UUID
 from app.database import get_db
 from app.auth.dependencies import get_user_id
 from app.models.db_models import DailyEntry, FocusArea, WeeklyDigest
-from app.schemas.ai import SummarizeRequest, WeeklyDigestRequest, WeeklyDigestResponse
+from app.schemas.ai import SummarizeRequest, WeeklyDigestRequest, WeeklyDigestResponse, FocusAreaSummarizeRequest, FocusAreaSummaryResponse
 from app.schemas.entry import EntryResponse
 from app.services import ai_service
 
@@ -74,6 +74,55 @@ async def summarize_entry(
     await db.commit()
     await db.refresh(entry)
     return entry
+
+
+@router.post("/summarize-focus-area", response_model=FocusAreaSummaryResponse)
+async def summarize_focus_area(
+    payload: FocusAreaSummarizeRequest,
+    user_id: str = Depends(get_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    _check_rate_limit(user_id)
+
+    fa_result = await db.execute(
+        select(FocusArea).where(FocusArea.id == payload.focus_area_id, FocusArea.user_id == UUID(user_id))
+    )
+    fa = fa_result.scalar_one_or_none()
+    if not fa:
+        raise HTTPException(status_code=404, detail="Focus area not found")
+
+    entries_result = await db.execute(
+        select(DailyEntry).where(
+            DailyEntry.focus_area_id == payload.focus_area_id,
+            DailyEntry.user_id == UUID(user_id),
+            DailyEntry.notes != None,
+        ).order_by(DailyEntry.entry_date.desc())
+    )
+    entries = entries_result.scalars().all()
+
+    if not entries:
+        raise HTTPException(status_code=400, detail="No notes found for this focus area")
+
+    notes_text = "\n\n".join([
+        f"[{e.entry_date}]\n{e.notes_plain_text or ''}"
+        for e in entries if e.notes_plain_text
+    ])
+    date_range = f"{entries[-1].entry_date} → {entries[0].entry_date}"
+
+    try:
+        summary = await ai_service.summarize_focus_area_notes(
+            focus_area_name=fa.name,
+            notes_text=notes_text,
+            total_notes=len(entries),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"code": "AI_SERVICE_ERROR", "message": str(e)})
+
+    return FocusAreaSummaryResponse(
+        summary=summary,
+        total_notes=len(entries),
+        date_range=date_range,
+    )
 
 
 @router.post("/weekly-digest", response_model=WeeklyDigestResponse)
