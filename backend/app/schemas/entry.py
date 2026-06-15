@@ -42,6 +42,7 @@ class EntryResponse(BaseModel):
     word_count: int
     todo_completions: Optional[Any] = {}
     is_pinned: bool = False
+    attachment_count: int = 0
     created_at: datetime
     updated_at: datetime
 

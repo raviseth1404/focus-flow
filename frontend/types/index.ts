@@ -69,6 +69,7 @@ export interface DailyEntry {
   word_count: number
   todo_completions: Record<string, boolean>
   is_pinned: boolean
+  attachment_count: number
   created_at: string
   updated_at: string
 }

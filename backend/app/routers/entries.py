@@ -8,7 +8,7 @@ from typing import Optional, Union, List, Dict
 from pydantic import BaseModel
 from app.database import get_db
 from app.auth.dependencies import get_user_id
-from app.models.db_models import DailyEntry, FocusArea, DailyMood
+from app.models.db_models import DailyEntry, FocusArea, DailyMood, Attachment
 from app.schemas.entry import EntryUpsert, EntryUpdate, EntryResponse, CalendarHeatmapItem
 from app.schemas.common import PaginatedResponse
 
@@ -66,8 +66,16 @@ async def list_entries(
         )
         total = count_result.scalar_one()
 
+        # Subquery: attachment count per entry
+        att_count_sq = (
+            select(Attachment.daily_entry_id, func.count(Attachment.id).label("cnt"))
+            .group_by(Attachment.daily_entry_id)
+            .subquery()
+        )
+
         result = await db.execute(
-            select(DailyEntry)
+            select(DailyEntry, func.coalesce(att_count_sq.c.cnt, 0).label("attachment_count"))
+            .outerjoin(att_count_sq, att_count_sq.c.daily_entry_id == DailyEntry.id)
             .where(
                 DailyEntry.user_id == UUID(user_id),
                 DailyEntry.focus_area_id == focus_area_id,
@@ -76,9 +84,15 @@ async def list_entries(
             .limit(limit)
             .offset(offset)
         )
-        items = result.scalars().all()
+        rows = result.all()
+        items = []
+        for row in rows:
+            entry_obj, att_cnt = row[0], row[1]
+            resp = EntryResponse.model_validate(entry_obj)
+            resp.attachment_count = att_cnt
+            items.append(resp)
         return PaginatedResponse(
-            items=[EntryResponse.model_validate(item) for item in items],
+            items=items,
             total=total,
             limit=limit,
             offset=offset,

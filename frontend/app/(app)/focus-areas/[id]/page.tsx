@@ -12,7 +12,7 @@ import { focusAreasApi } from '@/lib/api/focus-areas'
 import { entriesApi } from '@/lib/api/entries'
 import { FocusAreaForm } from '@/components/focus-areas/FocusAreaForm'
 import { format, parseISO } from 'date-fns'
-import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff, Sparkles, Trash2 } from 'lucide-react'
+import { ChevronLeft, Plus, Save, Pencil, FileText, Pin, PinOff, Sparkles, Trash2, Paperclip } from 'lucide-react'
 import { ShareButton } from '@/components/ui/ShareButton'
 import toast from 'react-hot-toast'
 import { aiApi } from '@/lib/api/ai'
@@ -415,6 +415,12 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                               {entry.word_count} words
                             </span>
                           )}
+                          {entry.attachment_count > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-[var(--color-text-disabled)]">
+                              <Paperclip size={11} />
+                              {entry.attachment_count}
+                            </span>
+                          )}
                           {/* Actions */}
                           <div className="ml-auto flex items-center gap-1">
                             <button
@@ -453,6 +459,12 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                           </div>
                         </div>
                         <RichTextEditor content={entry.notes} readOnly />
+                        <AttachmentPanel
+                          entryId={entry.id}
+                          section="notes"
+                          focusAreaId={id}
+                          selectedDate={entry.entry_date}
+                        />
                       </div>
                     </div>
                   </div>
