@@ -272,24 +272,24 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
 
         {/* Header */}
         {focusArea && (
-          <div className="flex items-start justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-3xl">{focusArea.icon}</span>
-                <h1 className="font-heading text-3xl font-semibold text-[var(--color-text-primary)]">
+                <span className="text-2xl sm:text-3xl">{focusArea.icon}</span>
+                <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-[var(--color-text-primary)]">
                   {focusArea.name}
                 </h1>
               </div>
-              <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-[var(--color-text-secondary)]">
                 <span>{focusArea.total_days ?? 0} days logged</span>
-                <span>{(focusArea.total_words ?? 0).toLocaleString()} words total</span>
+                <span>{(focusArea.total_words ?? 0).toLocaleString()} words</span>
                 {focusArea.todo_items?.length > 0 && (
                   <span className="text-[var(--color-accent)]">
-                    {focusArea.todo_items.length} daily to-dos
+                    {focusArea.todo_items.length} to-dos
                   </span>
                 )}
                 {focusArea.description && (
-                  <span className="text-[var(--color-text-disabled)]">{focusArea.description}</span>
+                  <span className="text-[var(--color-text-disabled)] hidden sm:inline">{focusArea.description}</span>
                 )}
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                 disabled={sortedEntries.length === 0}
                 title={sortedEntries.length === 0 ? 'Add some notes first' : 'Summarize all notes with AI'}
               >
-                <Sparkles size={14} /> AI Summary
+                <Sparkles size={14} /> <span className="hidden sm:inline">AI Summary</span><span className="sm:hidden">AI</span>
               </Button>
               <Button onClick={openNewNote} size="sm">
                 <Plus size={14} /> New Note
@@ -382,9 +382,9 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                       <span className="text-xs font-semibold text-[var(--color-text-disabled)] uppercase tracking-wide">All notes</span>
                     </div>
                   )}
-                  <div className="flex gap-5">
-                    {/* Date column */}
-                    <div className="flex flex-col items-center w-28 flex-shrink-0">
+                  <div className="flex gap-3 sm:gap-5">
+                    {/* Date column — hidden on mobile, shown on sm+ */}
+                    <div className="hidden sm:flex flex-col items-center w-24 flex-shrink-0">
                       <div className="text-center">
                         <p className="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wide">
                           {format(parseISO(entry.entry_date), 'MMM')}
@@ -403,12 +403,13 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                     </div>
 
                     {/* Note content */}
-                    <div className="flex-1 pb-6">
-                      <div className={`card p-5 ${entry.is_pinned ? 'border border-[var(--color-accent-muted)] ring-1 ring-[var(--color-accent-muted)]' : ''}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <FileText size={13} className="text-[var(--color-accent)]" />
+                    <div className="flex-1 pb-4 sm:pb-6 min-w-0">
+                      <div className={`card p-4 sm:p-5 ${entry.is_pinned ? 'border border-[var(--color-accent-muted)] ring-1 ring-[var(--color-accent-muted)]' : ''}`}>
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-3 flex-wrap">
+                          <FileText size={13} className="text-[var(--color-accent)] flex-shrink-0" />
                           <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-                            {format(parseISO(entry.entry_date), 'EEEE, MMMM d')}
+                            <span className="sm:hidden">{format(parseISO(entry.entry_date), 'MMM d, yyyy')}</span>
+                            <span className="hidden sm:inline">{format(parseISO(entry.entry_date), 'EEEE, MMMM d')}</span>
                           </span>
                           {entry.word_count > 0 && (
                             <span className="text-xs text-[var(--color-text-disabled)]">
@@ -422,7 +423,7 @@ export default function FocusAreaDetailPage({ params }: { params: { id: string }
                             </span>
                           )}
                           {/* Actions */}
-                          <div className="ml-auto flex items-center gap-1">
+                          <div className="ml-auto flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                             <button
                               onClick={() => togglePin(entry)}
                               disabled={togglingPinId === entry.id}

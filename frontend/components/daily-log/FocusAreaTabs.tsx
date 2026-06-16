@@ -36,7 +36,7 @@ export function FocusAreaTabs({
   return (
     <div className="flex flex-col">
       {/* Focus Area selector */}
-      <div className="px-6 pt-4 pb-2 border-b border-[var(--color-border)]">
+      <div className="px-4 sm:px-6 pt-4 pb-2 border-b border-[var(--color-border)]">
         <div className="flex gap-2 flex-wrap">
           {focusAreas.map((fa) => {
             const hasEntry = !!entryForArea(fa.id)
@@ -65,7 +65,7 @@ export function FocusAreaTabs({
       {activeFocusArea && (
         <>
           {/* Tab bar */}
-          <div className="flex gap-1 px-6 pt-3 pb-0">
+          <div className="flex gap-1 px-4 sm:px-6 pt-3 pb-0">
             {(['activities', 'notes'] as TabId[]).map((tab) => (
               <button
                 key={tab}
@@ -83,7 +83,7 @@ export function FocusAreaTabs({
           </div>
 
           {/* Tab content — no fixed height, let the Drawer's outer scroll handle overflow */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6 pb-24 sm:pb-6">
             {activeTab === 'activities' && (
               <>
                 <TodoChecklist

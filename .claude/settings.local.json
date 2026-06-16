@@ -54,7 +54,32 @@
       "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__get_runtime_logs",
       "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__deploy_to_vercel",
       "Bash(npx vercel *)",
-      "Bash(curl -s -X OPTIONS https://focus-flow-api-1fa3.onrender.com/focus-areas -H 'Origin: https://focus-flow-ur5s.vercel.app' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: Content-Type, Authorization' -v)"
+      "Bash(curl -s -X OPTIONS https://focus-flow-api-1fa3.onrender.com/focus-areas -H 'Origin: https://focus-flow-ur5s.vercel.app' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: Content-Type, Authorization' -v)",
+      "Bash(gh run *)",
+      "Bash(curl -s https://focus-flow-api-1fa3.onrender.com/health)",
+      "Bash(curl -s https://focus-flow-api-1fa3.onrender.com/openapi.json)",
+      "Bash(python3 -c \"import json,sys; spec=json.load\\(sys.stdin\\); paths=[p for p in spec.get\\('paths',{}\\) if 'summarize' in p]; print\\(paths\\)\")",
+      "Bash(SUPABASE_URL=http://localhost SUPABASE_SERVICE_ROLE_KEY=test SUPABASE_JWT_SECRET=test-secret-at-least-32-characters-long DATABASE_URL=sqlite+aiosqlite:///./test.db ANTHROPIC_API_KEY=test python3 -m pytest tests/ -v)",
+      "Bash(git -C /Users/raviseth/Downloads/focusflow log --all --full-history -- \"**/.env\" \"**/.env.local\")",
+      "Bash(git -C /Users/raviseth/Downloads/focusflow log --all --oneline -- \"backend/.env\" \"frontend/.env.local\")",
+      "Bash(xargs ls *)",
+      "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__list_deployments",
+      "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__get_deployment_build_logs",
+      "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__get_project",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(vercel --version)",
+      "mcp__fd7393e0-fdf7-40e2-b7ec-a31e6fbc75c2__check_domain_availability_and_price",
+      "Bash(curl -v http://focusflow.services)",
+      "Bash(curl -s \"https://focus-flow-api-1fa3.onrender.com/health\")",
+      "Bash(curl -s -I -X OPTIONS https://focus-flow-api-1fa3.onrender.com/focus-areas -H 'Origin: https://focusflow.services' -H 'Access-Control-Request-Method: GET')",
+      "Bash(node -e ' *)",
+      "Bash(npx --yes sharp-cli --version)",
+      "Bash(npm install *)",
+      "Bash(git config *)",
+      "Bash(sed -i '' 's/px-6 py-4 border-b border-\\\\[var\\(--color-border\\)\\\\] bg-\\\\[var\\(--color-bg-surface\\)\\\\]/px-4 sm:px-6 py-4 border-b border-[var\\(--color-border\\)] bg-[var\\(--color-bg-surface\\)]/' /Users/raviseth/Downloads/focusflow/frontend/components/layout/TopNav.tsx)",
+      "Bash(sed -i '' 's/px-6 pt-4 pb-2/px-4 sm:px-6 pt-4 pb-2/' /Users/raviseth/Downloads/focusflow/frontend/components/daily-log/FocusAreaTabs.tsx)",
+      "Bash(sed -i '' 's/flex gap-1 px-6 pt-3/flex gap-1 px-4 sm:px-6 pt-3/' /Users/raviseth/Downloads/focusflow/frontend/components/daily-log/FocusAreaTabs.tsx)",
+      "Bash(sed -i '' 's/px-6 py-4 border-b border-\\\\[var\\(--color-border\\)\\\\]/px-4 sm:px-6 py-4 border-b border-[var\\(--color-border\\)]/' /Users/raviseth/Downloads/focusflow/frontend/components/ui/Drawer.tsx)"
     ]
   }
 }

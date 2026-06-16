@@ -49,7 +49,7 @@ export function Drawer({ isOpen, onClose, title, children, width = 'max-w-2xl' }
         style={{ boxShadow: '-8px 0 48px rgba(0,0,0,0.4)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border)]">
           {title && (
             <h2 className="font-heading text-lg font-semibold text-[var(--color-text-primary)]">
               {title}
