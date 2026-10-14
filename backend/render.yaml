@@ -2,6 +2,7 @@ services:
   - type: web
     name: focusflow-api
     runtime: python
+    plan: free            # Ravi's rule (14 Oct 2026): Free by default, Starter only with his approval, never above
     buildCommand: pip install -r requirements.txt
     startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
     healthCheckPath: /health
